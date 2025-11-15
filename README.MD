@@ -19,4 +19,14 @@
 最后的打包指令 pyinstaller --noconfirm --onedir --console --add-data "E:\DouyinLiveWebFetcher-1.8\a_bogus.js;." --add-data "E:\DouyinLiveWebFetcher-1.8\sign.js;." --add-data "E:\DouyinLiveWebFetcher-1.8\sign_v0.js;." --add-data "E:\DouyinLiveWebFetcher-1.8\webmssdk.js;." --add-data "E:\DouyinLiveWebFetcher-1.8\protobuf;protobuf/" --add-binary "C:\Users\user\AppData\Local\Programs\Python\Python310\Lib\site-packages\py_mini_racer\mini_racer.dll;." --add-data "C:\Users\user\AppData\Local\Programs\Python\Python310\Lib\site-packages\py_mini_racer\snapshot_blob.bin;." --add-data "C:\Users\user\AppData\Local\Programs\Python\Python310\Lib\site-packages\py_mini_racer\icudtl.dat;." "E:\DouyinLiveWebFetcher-1.8\main.py"
 
 9.去掉隐私
+10.填上实际的 准备部署
+11.正式日志问题 把mini_racer需要的那4个文件添加进来
+
+12.生成的弹幕文件可以在 vs code 里面及时刷新
+
+13.完全分类 print 的消息分为直播的消息丢到正式日志，其他的东西丢到临时日志
+
+14.修复日志混乱的 bug  心跳改为业务心跳
+
+15.添加临时日志瘦身功能
 
