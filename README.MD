@@ -2,8 +2,11 @@
 
 **安装 Python3.10      用vs code打开main.py      点击右上角的播放键运行程序      在下方控制栏里输入 python -m pip install -r requirements.txt   安装好，再点击右上角播放键运行程序，应该就能跑了   打包就按下面的来打包就行**
 
+1.添加# python -m pip install -r requirements.txt 注释 方便首次运行 
 
-1.添加# python -m pip install -r requirements.txt 注释 方便首次运行 2. 几乎所有消息添加时间搓 3.排行榜和表情消息爆炸问题解决
+2. 几乎所有消息添加时间搓 
+
+3.排行榜和表情消息爆炸问题解决
 
 4.更新重连机制
 
