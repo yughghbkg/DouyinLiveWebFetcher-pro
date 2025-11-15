@@ -585,7 +585,11 @@ class DouyinLiveWebFetcher:
 
         line = "【直播间排行榜msg】" + " | ".join(simple) + f" [{now}]"
         print(line)
-        self._log(line, now)
+        if self._log_file:
+            self._log(line, now) #未直播的时候不触发开播
+        else:
+            self._tmp_log(line)
+
 
     def _parseControlMsg(self, payload):
         message = ControlMessage().parse(payload)
