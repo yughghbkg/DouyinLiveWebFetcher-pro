@@ -14,10 +14,12 @@ import os
 if __name__ == '__main__':
     live_id = ''
 
-    #log_dir = r".\formal_logs"
-    base_dir = os.path.dirname(os.path.abspath(__file__))   # main.py 所在目录
-    log_dir = os.path.join(base_dir, "formal_logs")         # 保证永远写到项目内部
+    # 如果你想指定一个绝对路径，例如：
+    # log_dir = r"D:\douyin_logs"
+    # 否则就留空：log_dir = ""  写相对路径和其他任何字符是无效的
+    log_dir = ""
 
     room = DouyinLiveWebFetcher(live_id, log_dir=log_dir)
     room.start()
+
 
