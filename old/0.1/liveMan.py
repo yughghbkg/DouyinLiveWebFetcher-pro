@@ -402,7 +402,7 @@ class DouyinLiveWebFetcher:
     def _sendHeartbeat(self):
         while self._running:
             try:
-                heartbeat_frame = WebcastImPushFrame(
+                heartbeat_frame = PushFrame(
                     payload_type="hb"
                 ).SerializeToString()
 
@@ -426,68 +426,40 @@ class DouyinLiveWebFetcher:
         threading.Thread(target=self._sendHeartbeat).start()
 
     def _wsOnMessage(self, ws, message):
-        package = WebcastImPushFrame().parse(message)
-        response = WebcastImResponse().parse(gzip.decompress(package.payload))
-
-        # 如果服务器下发了新的心跳间隔，这里会自动同步
-        # if hasattr(response, "heartbeat_duration") and response.heartbeat_duration > 0:
-        #     self.heartbeat_interval = response.heartbeat_duration / 1000.0
-        #     print(f"【√】服务器心跳间隔: {self.heartbeat_interval} 秒")
+        package = PushFrame().parse(message)
+        response = Response().parse(gzip.decompress(package.payload))
+       
+       # if hasattr(response, "heartbeat_duration") and response.heartbeat_duration > 0:
+        #    self.heartbeat_interval = response.heartbeat_duration / 1000.0
+         #   print(f"【√】服务器心跳间隔: {self.heartbeat_interval} 秒")
 
         if response.need_ack:
-            ack = WebcastImPushFrame(
+            ack = PushFrame(
                 log_id=package.log_id,
                 payload_type='ack',
                 payload=response.internal_ext.encode('utf-8')
             ).SerializeToString()
             ws.send(ack, websocket.ABNF.OPCODE_BINARY)
 
-        # 新 protobuf 的消息字段名是 messages（不是 messages_list）
-        for msg in response.messages:
+        for msg in response.messages_list:
             method = msg.method
-
-            # 旧 method 名（兼容历史）
-            # 新 method 名（WebcastImXXXXXMessage）
-            handlers = {
-                'WebcastImChatMessage': self._parseChatMsg,
-                'WebcastImGiftMessage': self._parseGiftMsg,
-                'WebcastImLikeMessage': self._parseLikeMsg,
-                'WebcastImMemberMessage': self._parseMemberMsg,
-                'WebcastImSocialMessage': self._parseSocialMsg,
-                'WebcastImRoomUserSeqMessage': self._parseRoomUserSeqMsg,
-                'WebcastImFansclubMessage': self._parseFansclubMsg,
-                'WebcastImControlMessage': self._parseControlMsg,
-                'WebcastImEmojiChatMessage': self._parseEmojiChatMsg,
-                'WebcastImRoomStatsMessage': self._parseRoomStatsMsg,
-                'WebcastImRoomMessage': self._parseRoomMsg,
-                'WebcastImRoomRankMessage': self._parseRankMsg,
-                'WebcastImRoomStreamAdaptationMessage': self._parseRoomStreamAdaptationMsg,
-
-                # 兼容旧 method 字符串（抖音旧协议）
-                'WebcastChatMessage': self._parseChatMsg,
-                'WebcastGiftMessage': self._parseGiftMsg,
-                'WebcastLikeMessage': self._parseLikeMsg,
-                'WebcastMemberMessage': self._parseMemberMsg,
-                'WebcastSocialMessage': self._parseSocialMsg,
-                'WebcastRoomUserSeqMessage': self._parseRoomUserSeqMsg,
-                'WebcastFansclubMessage': self._parseFansclubMsg,
-                'WebcastControlMessage': self._parseControlMsg,
-                'WebcastEmojiChatMessage': self._parseEmojiChatMsg,
-                'WebcastRoomStatsMessage': self._parseRoomStatsMsg,
-                'WebcastRoomMessage': self._parseRoomMsg,
-                'WebcastRoomRankMessage': self._parseRankMsg,
-                'WebcastRoomStreamAdaptationMessage': self._parseRoomStreamAdaptationMsg,
-            }
-
-            handler = handlers.get(method)
-            if handler:
-                try:
-                    handler(msg.payload)
-                except Exception as e:
-                    print(f"【X】解析 {method} 失败: {e}")
-            else:
-                # Debug：如果遇到没处理的消息类型，可以看到具体名称
-                print(f"【?】未处理的消息类型: {method}")
+            try:
+                {
+                    'WebcastChatMessage': self._parseChatMsg,
+                    'WebcastGiftMessage': self._parseGiftMsg,
+                    'WebcastLikeMessage': self._parseLikeMsg,
+                    'WebcastMemberMessage': self._parseMemberMsg,
+                    'WebcastSocialMessage': self._parseSocialMsg,
+                    'WebcastRoomUserSeqMessage': self._parseRoomUserSeqMsg,
+                    'WebcastFansclubMessage': self._parseFansclubMsg,
+                    'WebcastControlMessage': self._parseControlMsg,
+                    'WebcastEmojiChatMessage': self._parseEmojiChatMsg,
+                    'WebcastRoomStatsMessage': self._parseRoomStatsMsg,
+                    'WebcastRoomMessage': self._parseRoomMsg,
+                    'WebcastRoomRankMessage': self._parseRankMsg,
+                    'WebcastRoomStreamAdaptationMessage': self._parseRoomStreamAdaptationMsg,
+                }.get(method)(msg.payload)
+            except Exception:
                 pass
 
     def _wsOnError(self, ws, error):
@@ -502,8 +474,8 @@ class DouyinLiveWebFetcher:
         self._tmp_log(msg)
 
     def _parseChatMsg(self, payload):
-        message = WebcastImChatMessage().parse(payload)
-        user_name = message.user.nickname
+        message = ChatMessage().parse(payload)
+        user_name = message.user.nick_name
         user_id = message.user.id
         content = message.content
         now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -512,8 +484,8 @@ class DouyinLiveWebFetcher:
         self._log(line, now)
 
     def _parseGiftMsg(self, payload):
-        message = WebcastImGiftMessage().parse(payload)
-        user_name = message.user.nickname
+        message = GiftMessage().parse(payload)
+        user_name = message.user.nick_name
         gift_name = message.gift.name
         gift_cnt = message.combo_count
         now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -522,16 +494,16 @@ class DouyinLiveWebFetcher:
         self._log(line, now)
 
     def _parseLikeMsg(self, payload):
-        message = WebcastImLikeMessage().parse(payload)
-        user_name = message.user.nickname
+        message = LikeMessage().parse(payload)
+        user_name = message.user.nick_name
         count = message.count
         now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         line = f"【点赞msg】{user_name} 点了{count}个赞 [{now}]"
         print(line)
         self._log(line, now)
     def _parseMemberMsg(self, payload):
-        message = WebcastImMemberMessage().parse(payload)
-        user_name = message.user.nickname
+        message = MemberMessage().parse(payload)
+        user_name = message.user.nick_name
         user_id = message.user.id
         gender = ["女", "男"][message.user.gender]
         now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -541,8 +513,8 @@ class DouyinLiveWebFetcher:
         self._log(line, now)
 
     def _parseSocialMsg(self, payload):
-        message = WebcastImSocialMessage().parse(payload)
-        user_name = message.user.nickname
+        message = SocialMessage().parse(payload)
+        user_name = message.user.nick_name
         user_id = message.user.id
         now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
@@ -551,7 +523,7 @@ class DouyinLiveWebFetcher:
         self._log(line, now)
 
     def _parseRoomUserSeqMsg(self, payload):
-        message = WebcastImRoomUserSeqMessage().parse(payload)
+        message = RoomUserSeqMessage().parse(payload)
         current = message.total
         total = message.total_pv_for_anchor
         now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -561,7 +533,7 @@ class DouyinLiveWebFetcher:
         self._log(line, now)
 
     def _parseFansclubMsg(self, payload):
-        message = WebcastImFansclubMessage().parse(payload)
+        message = FansclubMessage().parse(payload)
         content = message.content
         now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
@@ -570,9 +542,9 @@ class DouyinLiveWebFetcher:
         self._log(line, now)
 
     def _parseEmojiChatMsg(self, payload):
-        message = WebcastImEmojiChatMessage().parse(payload)
+        message = EmojiChatMessage().parse(payload)
         emoji_id = message.emoji_id
-        user_name = message.user.nickname
+        user_name = message.user.nick_name
         user_id = message.user.id
         default_content = message.default_content or "发送了表情"
 
@@ -582,7 +554,7 @@ class DouyinLiveWebFetcher:
         self._log(line, now)
 
     def _parseRoomMsg(self, payload):
-        message = WebcastImRoomMessage().parse(payload)
+        message = RoomMessage().parse(payload)
         common = message.common
         room_id = common.room_id
         now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -592,7 +564,7 @@ class DouyinLiveWebFetcher:
         self._tmp_log(line)
 
     def _parseRoomStatsMsg(self, payload):
-        message = WebcastImRoomStatsMessage().parse(payload)
+        message = RoomStatsMessage().parse(payload)
         display_long = message.display_long
         now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
@@ -601,13 +573,13 @@ class DouyinLiveWebFetcher:
         self._tmp_log(line)
 
     def _parseRankMsg(self, payload):
-        message = WebcastImRoomRankMessage().parse(payload)
-        ranks_list = message.ranks
+        message = RoomRankMessage().parse(payload)
+        ranks_list = message.ranks_list
         now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
         simple = []
         for i, item in enumerate(ranks_list, start=1):
-            nick = item.user.nickname
+            nick = item.user.nick_name
             score = getattr(item, "score_str", "")
             simple.append(f"{i}. {nick} {score}".strip())
 
@@ -620,7 +592,7 @@ class DouyinLiveWebFetcher:
 
 
     def _parseControlMsg(self, payload):
-        message = WebcastImControlMessage().parse(payload)
+        message = ControlMessage().parse(payload)
         now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
         if message.status == 3:
@@ -630,7 +602,7 @@ class DouyinLiveWebFetcher:
             self.stop()
 
     def _parseRoomStreamAdaptationMsg(self, payload):
-        message = WebcastImRoomStreamAdaptationMessage().parse(payload)
+        message = RoomStreamAdaptationMessage().parse(payload)
         adaptationType = message.adaptation_type
 
         now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")

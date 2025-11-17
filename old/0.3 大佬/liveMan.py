@@ -428,11 +428,10 @@ class DouyinLiveWebFetcher:
     def _wsOnMessage(self, ws, message):
         package = WebcastImPushFrame().parse(message)
         response = WebcastImResponse().parse(gzip.decompress(package.payload))
-
-        # 如果服务器下发了新的心跳间隔，这里会自动同步
-        # if hasattr(response, "heartbeat_duration") and response.heartbeat_duration > 0:
-        #     self.heartbeat_interval = response.heartbeat_duration / 1000.0
-        #     print(f"【√】服务器心跳间隔: {self.heartbeat_interval} 秒")
+       
+       # if hasattr(response, "heartbeat_duration") and response.heartbeat_duration > 0:
+        #    self.heartbeat_interval = response.heartbeat_duration / 1000.0
+         #   print(f"【√】服务器心跳间隔: {self.heartbeat_interval} 秒")
 
         if response.need_ack:
             ack = WebcastImPushFrame(
@@ -442,53 +441,26 @@ class DouyinLiveWebFetcher:
             ).SerializeToString()
             ws.send(ack, websocket.ABNF.OPCODE_BINARY)
 
-        # 新 protobuf 的消息字段名是 messages（不是 messages_list）
         for msg in response.messages:
             method = msg.method
-
-            # 旧 method 名（兼容历史）
-            # 新 method 名（WebcastImXXXXXMessage）
-            handlers = {
-                'WebcastImChatMessage': self._parseChatMsg,
-                'WebcastImGiftMessage': self._parseGiftMsg,
-                'WebcastImLikeMessage': self._parseLikeMsg,
-                'WebcastImMemberMessage': self._parseMemberMsg,
-                'WebcastImSocialMessage': self._parseSocialMsg,
-                'WebcastImRoomUserSeqMessage': self._parseRoomUserSeqMsg,
-                'WebcastImFansclubMessage': self._parseFansclubMsg,
-                'WebcastImControlMessage': self._parseControlMsg,
-                'WebcastImEmojiChatMessage': self._parseEmojiChatMsg,
-                'WebcastImRoomStatsMessage': self._parseRoomStatsMsg,
-                'WebcastImRoomMessage': self._parseRoomMsg,
-                'WebcastImRoomRankMessage': self._parseRankMsg,
-                'WebcastImRoomStreamAdaptationMessage': self._parseRoomStreamAdaptationMsg,
-
-                # 兼容旧 method 字符串（抖音旧协议）
-                'WebcastChatMessage': self._parseChatMsg,
-                'WebcastGiftMessage': self._parseGiftMsg,
-                'WebcastLikeMessage': self._parseLikeMsg,
-                'WebcastMemberMessage': self._parseMemberMsg,
-                'WebcastSocialMessage': self._parseSocialMsg,
-                'WebcastRoomUserSeqMessage': self._parseRoomUserSeqMsg,
-                'WebcastFansclubMessage': self._parseFansclubMsg,
-                'WebcastControlMessage': self._parseControlMsg,
-                'WebcastEmojiChatMessage': self._parseEmojiChatMsg,
-                'WebcastRoomStatsMessage': self._parseRoomStatsMsg,
-                'WebcastRoomMessage': self._parseRoomMsg,
-                'WebcastRoomRankMessage': self._parseRankMsg,
-                'WebcastRoomStreamAdaptationMessage': self._parseRoomStreamAdaptationMsg,
-            }
-
-            handler = handlers.get(method)
-            if handler:
-                try:
-                    handler(msg.payload)
-                except Exception as e:
-                    print(f"【X】解析 {method} 失败: {e}")
-            else:
-                # Debug：如果遇到没处理的消息类型，可以看到具体名称
-                print(f"【?】未处理的消息类型: {method}")
-                pass
+            try:
+                {
+                    'WebcastChatMessage': self._parseChatMsg,
+                    'WebcastGiftMessage': self._parseGiftMsg,
+                    'WebcastLikeMessage': self._parseLikeMsg,
+                    'WebcastMemberMessage': self._parseMemberMsg,
+                    'WebcastSocialMessage': self._parseSocialMsg,
+                    'WebcastRoomUserSeqMessage': self._parseRoomUserSeqMsg,
+                    'WebcastFansclubMessage': self._parseFansclubMsg,
+                    'WebcastControlMessage': self._parseControlMsg,
+                    'WebcastEmojiChatMessage': self._parseEmojiChatMsg,
+                    'WebcastRoomStatsMessage': self._parseRoomStatsMsg,
+                    'WebcastRoomMessage': self._parseRoomMsg,
+                    'WebcastRoomRankMessage': self._parseRankMsg,
+                    'WebcastRoomStreamAdaptationMessage': self._parseRoomStreamAdaptationMsg,
+                }.get(method)(msg.payload)
+            except Exception as e:
+                print(f"【X】失败: {e}")
 
     def _wsOnError(self, ws, error):
         msg = f"WebSocket error: {error}"

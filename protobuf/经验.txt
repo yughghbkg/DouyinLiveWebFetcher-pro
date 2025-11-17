@@ -1,0 +1,11 @@
+power shell命令
+cd  本目录
+$env:PATH = "$pwd;" + $env:PATH
+protoc --version
+ pip install ruff
+./protoc.exe -I . --python_betterproto_out=. douyin.proto
+记得改名回douyin.py
+
+
+另外，解析成不可读的模式，解析的会更快，但是这个需要进一步适配
+protoc --python_out=. douyin.proto
